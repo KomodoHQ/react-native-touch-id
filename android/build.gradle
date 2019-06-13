@@ -9,12 +9,12 @@ buildscript {
       url 'https://maven.google.com/'
       name 'Google'
     }
-    jcenter()
     google()
+    jcenter()
   }
 
   dependencies {
-    classpath _ext.has('gradleBuildTools') ? _ext.gradleBuildTools : 'com.android.tools.build:gradle:3.4.0'
+    classpath rootProject.ext.has('gradleBuildTools') ? rootProject.ext.gradleBuildTools : 'com.android.tools.build:gradle:3.4.0'
   }
 }
 
