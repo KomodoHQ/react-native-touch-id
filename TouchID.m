@@ -62,13 +62,24 @@ RCT_EXPORT_METHOD(authenticate: (NSString *)reason
     // Device has TouchID
     if ([context canEvaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics error:&error]) {
         // Attempt Authentification
-        [context evaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics
+        [context evaluatePolicy:LAPolicyDeviceOwnerAuthentication
                 localizedReason:reason
                           reply:^(BOOL success, NSError *error)
          {
+             // Device does support TouchID but failed, if passwordFallback is true use passcode fallback
+             if (!success && [passcodeFallback boolValue] && [context canEvaluatePolicy:LAPolicyDeviceOwnerAuthentication error:&error]){
+                 [context evaluatePolicy:LAPolicyDeviceOwnerAuthentication
+                         localizedReason:reason
+                                   reply:^(BOOL success, NSError *error)
+                  {
+                      [self handleAttemptToUseDeviceIDWithSuccess:success error:error callback:callback];
+                  }];
+                 return;
+             }
+             
              [self handleAttemptToUseDeviceIDWithSuccess:success error:error callback:callback];
          }];
-
+        
         // Device does not support TouchID but user wishes to use passcode fallback
     } else if ([passcodeFallback boolValue] && [context canEvaluatePolicy:LAPolicyDeviceOwnerAuthentication error:&error]) {
         // Attempt Authentification
@@ -78,8 +89,7 @@ RCT_EXPORT_METHOD(authenticate: (NSString *)reason
          {
              [self handleAttemptToUseDeviceIDWithSuccess:success error:error callback:callback];
          }];
-    }
-    else {
+    } else {
         if (error) {
             NSString *errorReason = [self getErrorReason:error];
             NSLog(@"Authentication failed: %@", errorReason);
